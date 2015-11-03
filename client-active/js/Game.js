@@ -171,7 +171,7 @@ PlatformerGame.Game.prototype = {
     var data="username="+username+"&x="+x+"&y="+y+"&move="+move;
 
     var request = new XMLHttpRequest();
-    request.open('POST', 'http://myperfectgame.com:9000/sendMove', true);
+    request.open('POST', 'http://myperfectgame.com/node/sendMove', true);
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 //    request.onload = function() {
  //     if (request.status >= 200 && request.status < 400){
@@ -209,7 +209,7 @@ PlatformerGame.Game.prototype = {
                 }
             }
         }
-        request.open('GET', 'http://myperfectgame.com:9000/getData' + "?" + data, true);
+        request.open('GET', 'http://myperfectgame.com/node/getData' + "?" + data, true);
         request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
         request.send(data);
 
