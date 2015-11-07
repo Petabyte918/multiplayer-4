@@ -6,7 +6,7 @@ PlatformerGame.Game = function(){};
 PlatformerGame.Game.prototype = {
   create: function() {
 
-    //console.log("returned " + this.getUsername());
+    this.getUsername();
     //console.log("username:" + username);
 
     var players = {};
@@ -40,6 +40,7 @@ PlatformerGame.Game.prototype = {
     //player = this.game.add.sprite(32, this.game.world.height - 150, 'dude');
     //player = this.playerGroup.create(32, this.game.world.height - 150, 'dude');
     //player["id"] = username;
+    totalPlayers = 0;
     player = this.spawnPlayer(username, 32, this.game.world.height - 150, 'dude')
     players["username"] = username;
     //this.spawnPlayer("player1", 32, this.game.world.height - 150, 'dude')
@@ -71,7 +72,6 @@ PlatformerGame.Game.prototype = {
 
     this.lastSentMove = 4; // 0 = stop, 1 = left, 2= up, 3= right, 4=?
     lastRecievedMove = 4;
-    totalPlayers = 1;
     tick = 1;
 
     this.playerNames = this.game.add.group();     
@@ -88,36 +88,33 @@ PlatformerGame.Game.prototype = {
     //this.game.physics.arcade.overlap(player, this.stars, this.collectStar, null, this);
 
     //  Reset the players velocity (movement)
-
-    if (this.cursors.left.isDown) { // don't send the same move
+this.lastSentMove = -1;
+    if (this.cursors.up.isDown && player.body.blocked.down) {
+        if (this.lastSentMove != 2) {
+            this.sendMove(username, player.body.x, player.body.y, 2);
+            this.lastSentMove = 2;
+        }
+    }
+    else if (this.cursors.left.isDown) { // don't send the same move
         if (this.lastSentMove != 1) {
-            this.sendMove(username, player.x, player.y, 1);
+            this.sendMove(username, player.body.x, player.body.y, 1);
             this.lastSentMove = 1;
         }
     }
     else if (this.cursors.right.isDown) {
         if (this.lastSentMove != 3) {
-            this.sendMove(username, player.x, player.y, 3);
+            this.sendMove(username, player.body.x, player.body.y, 3);
             this.lastSentMove = 3;
         }
     }
-    else
-    {
+    else {
         if (this.lastSentMove != 0) {
-
-            this.sendMove(username, player.x, player.y, 0);
+            this.sendMove(username, player.body.x, player.body.y, 0);
             this.lastSentMove = 0;
         }
-        
+
     }
-    
-    //  Allow the player to jump if they are touching the ground.
-    if (this.cursors.up.isDown && player.body.blocked.down) {
-        if (this.lastSentMove != 2) {
-            this.sendMove(username, player.x, player.y, 2);
-            this.lastSentMove = 2;
-        }
-    }
+
 
     playerData = this.getData(username);
     if (players["totalPlayers"] > totalPlayers) {
@@ -131,53 +128,77 @@ PlatformerGame.Game.prototype = {
                     }
                 }, this);
                 if (!found) {
-                    this.spawnPlayer(user, 32, this.game.world.height - 150, 'dude');
+console.log("spawning " + user);
+console.log("at x:" +  players[user]["x"]);
+console.log("at y:" +  players[user]["y"]);
+                    this.spawnPlayer(user, players[user]["x"], players[user]["y"], 'dude');
                 }
             }            
         }
     }
 
 
-    this.playerGroup.forEach(function(player) {
-        player.body.velocity.x = 0;
+    this.playerGroup.forEach(function(currentPlayer) {
+
+        if (tick % 121 == 0) {
+            //currentPlayer.reset(currentPlayer.x, currentPlayer.y);
+            currentPlayer.body.x = players[currentPlayer["id"]]["x"];
+            currentPlayer.body.y = players[currentPlayer["id"]]["y"];
+     //       currentPlayer.body.reset(players[currentPlayer["id"]]["x"], players[currentPlayer["id"]]["y"]);
+            currentPlayer.body.moves = true;
+        }
+
+        currentPlayer.body.velocity.x = 0;
 
         lastRecievedMove = -1;
 
-        if (players[player["id"]] && players[player["id"]]["lastMove"]) {
-            lastRecievedMove = players[player["id"]]["lastMove"];
+        if (players[currentPlayer["id"]] && players[currentPlayer["id"]]["lastMove"]) {
+            lastRecievedMove = players[currentPlayer["id"]]["lastMove"];
         }
         if (lastRecievedMove == 1) {
             //  Move to the left
-            player.body.velocity.x = -150;
+            currentPlayer.body.velocity.x = -150;
 
-            player.animations.play('left');
+            currentPlayer.animations.play('left');
         }
         else if (lastRecievedMove == 3) {
             //  Move to the left
-            player.body.velocity.x = 150;
+            currentPlayer.body.velocity.x = 150;
 
-            player.animations.play('right');
+            currentPlayer.animations.play('right');
         }
         else if (lastRecievedMove == 2) {
-            player.body.velocity.y = -350;
+            currentPlayer.body.velocity.y = -350;
 
         }
         else if (lastRecievedMove == 0) {
             //  Stand still
-            player.animations.stop();
+            currentPlayer.animations.stop();
 
-            player.frame = 4;
+            currentPlayer.frame = 4;
         }
-        if (player["label"]) {
-            player["label"].x = player.x;
-            player["label"].y = player.y;
+ 
+        if (tick % 120 == 0 ) {
+            console.log("currentPlayer is " + currentPlayer["id"]);
+            console.log("setting currentPlayer.x: " + parseInt(currentPlayer.body.x) + " to: " + parseInt(players[currentPlayer["id"]]["x"]));
+            console.log("setting currentPlayer.y: " + parseInt(currentPlayer.body.y) + " to: " + parseInt(players[currentPlayer["id"]]["y"]));
+            currentPlayer.body.moves = false;
+            //currentPlayer.x = players[currentPlayer["id"]]["x"];
+            //currentPlayer.y = players[currentPlayer["id"]]["y"];
+            //currentPlayer.body.reset(players[currentPlayer["id"]]["x"], players[currentPlayer["id"]]["y"]);
+        }
+
+        if (currentPlayer["label"]) {
+            currentPlayer["label"].x = currentPlayer.x;
+            currentPlayer["label"].y = currentPlayer.y;
         }
     }, this);
+       
   },
 
   spawnPlayer : function(username, x, y, sprite) {
-
-    newPlayer = this.playerGroup.create(32, this.game.world.height - 150, 'dude');
+console.log("spAWENING: " + username + ","+ x + "," +  y);
+    newPlayer = this.game.add.sprite(32, 400, 'dude');
     newPlayer["id"] = username;
     this.game.physics.arcade.enable(newPlayer);
     newPlayer.body.bounce.y = 0;
@@ -185,12 +206,12 @@ PlatformerGame.Game.prototype = {
     newPlayer.body.collideWorldBounds = true;
     newPlayer.animations.add('left', [0, 1, 2, 3], 10, true);
     newPlayer.animations.add('right', [5, 6, 7, 8], 10, true);
-
+//    newPlayer.anchor.setTo(0.5, 0.5);
+    this.playerGroup.add(newPlayer);
     playerName = this.game.add.text(newPlayer.x-10, newPlayer.y, username + "", { font: '14px Arial', fill: '#FFF', align: 'center' });
     playerName["id"] = username;
     newPlayer["label"] = playerName;
     totalPlayers++;
-
     return newPlayer;
   },
 
