@@ -6,7 +6,8 @@ PlatformerGame.Game = function(){};
 PlatformerGame.Game.prototype = {
   create: function() {
 
-    console.log("username:" + username);
+    //console.log("returned " + this.getUsername());
+    //console.log("username:" + username);
 
     var players = {};
     //console.log("username2:" + this.game.Preload.username);
@@ -34,21 +35,14 @@ PlatformerGame.Game.prototype = {
     //  We're going to be using physics, so enable the Arcade Physics system
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
+    this.playerGroup = this.game.add.group();
     // The player and its settings
-    player = this.game.add.sprite(32, this.game.world.height - 150, 'dude');
-    //player.scale.setTo(0.5, 0.5);
-
-    //  We need to enable physics on the player
-    this.game.physics.arcade.enable(player);
-
-    //  Player physics properties. Give the little guy a slight bounce.
-    player.body.bounce.y = 0;
-    player.body.gravity.y = 300;
-    player.body.collideWorldBounds = true;
-
-    //  Our two animations, walking left and right.
-    player.animations.add('left', [0, 1, 2, 3], 10, true);
-    player.animations.add('right', [5, 6, 7, 8], 10, true);
+    //player = this.game.add.sprite(32, this.game.world.height - 150, 'dude');
+    //player = this.playerGroup.create(32, this.game.world.height - 150, 'dude');
+    //player["id"] = username;
+    player = this.spawnPlayer(username, 32, this.game.world.height - 150, 'dude')
+    players["username"] = username;
+    //this.spawnPlayer("player1", 32, this.game.world.height - 150, 'dude')
 
     //  Finally some stars to collect
     this.stars = this.game.add.group();
@@ -79,23 +73,21 @@ PlatformerGame.Game.prototype = {
     lastRecievedMove = 4;
     totalPlayers = 1;
     tick = 1;
-     
+
+    this.playerNames = this.game.add.group();     
   },
 
   update: function() {
     tick++;
 
-// send the data; dont collide here
-
-    //  Collide the player and the stars with the platforms
-    this.game.physics.arcade.collide(player, this.blockedLayer);
-    this.game.physics.arcade.collide(this.stars, this.platforms);
+    this.game.physics.arcade.collide(this.playerGroup, this.blockedLayer);
+    //this.game.physics.arcade.collide(player2, this.blockedLayer);
+    //this.game.physics.arcade.collide(this.stars, this.platforms);
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-    this.game.physics.arcade.overlap(player, this.stars, this.collectStar, null, this);
+    //this.game.physics.arcade.overlap(player, this.stars, this.collectStar, null, this);
 
     //  Reset the players velocity (movement)
-    player.body.velocity.x = 0;
 
     if (this.cursors.left.isDown) { // don't send the same move
         if (this.lastSentMove != 1) {
@@ -128,31 +120,78 @@ PlatformerGame.Game.prototype = {
     }
 
     playerData = this.getData(username);
-
-    if (lastRecievedMove == 1) {
-        //  Move to the left
-        player.body.velocity.x = -150;
-
-        player.animations.play('left');
-    }
-    else if (lastRecievedMove == 3) {
-        //  Move to the left
-        player.body.velocity.x = 150;
-
-        player.animations.play('right');
-    }
-    else if (lastRecievedMove == 2) {
-        player.body.velocity.y = -350;
-
-    }
-    else if (lastRecievedMove == 0) {
-        //  Stand still
-        player.animations.stop();
-
-        player.frame = 4;
+    if (players["totalPlayers"] > totalPlayers) {
+        
+        for (var user in players) {
+            if (user != "totalPlayers") {
+                var found = false;
+                this.playerGroup.forEach(function(player) {            
+                    if (player["id"] == user) {
+                        found = true;
+                    }
+                }, this);
+                if (!found) {
+                    this.spawnPlayer(user, 32, this.game.world.height - 150, 'dude');
+                }
+            }            
+        }
     }
 
 
+    this.playerGroup.forEach(function(player) {
+        player.body.velocity.x = 0;
+
+        lastRecievedMove = -1;
+
+        if (players[player["id"]] && players[player["id"]]["lastMove"]) {
+            lastRecievedMove = players[player["id"]]["lastMove"];
+        }
+        if (lastRecievedMove == 1) {
+            //  Move to the left
+            player.body.velocity.x = -150;
+
+            player.animations.play('left');
+        }
+        else if (lastRecievedMove == 3) {
+            //  Move to the left
+            player.body.velocity.x = 150;
+
+            player.animations.play('right');
+        }
+        else if (lastRecievedMove == 2) {
+            player.body.velocity.y = -350;
+
+        }
+        else if (lastRecievedMove == 0) {
+            //  Stand still
+            player.animations.stop();
+
+            player.frame = 4;
+        }
+        if (player["label"]) {
+            player["label"].x = player.x;
+            player["label"].y = player.y;
+        }
+    }, this);
+  },
+
+  spawnPlayer : function(username, x, y, sprite) {
+
+    newPlayer = this.playerGroup.create(32, this.game.world.height - 150, 'dude');
+    newPlayer["id"] = username;
+    this.game.physics.arcade.enable(newPlayer);
+    newPlayer.body.bounce.y = 0;
+    newPlayer.body.gravity.y = 300;
+    newPlayer.body.collideWorldBounds = true;
+    newPlayer.animations.add('left', [0, 1, 2, 3], 10, true);
+    newPlayer.animations.add('right', [5, 6, 7, 8], 10, true);
+
+    playerName = this.game.add.text(newPlayer.x-10, newPlayer.y, username + "", { font: '14px Arial', fill: '#FFF', align: 'center' });
+    playerName["id"] = username;
+    newPlayer["label"] = playerName;
+    totalPlayers++;
+
+    return newPlayer;
   },
 
   collectStar : function(player, star) {
@@ -173,15 +212,7 @@ PlatformerGame.Game.prototype = {
     var request = new XMLHttpRequest();
     request.open('POST', 'http://myperfectgame.com/node/sendMove', true);
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-//    request.onload = function() {
- //     if (request.status >= 200 && request.status < 400){
-  //      // Success!
-   //     // here you could go to the leaderboard or restart your game .
-    //  } else {
-     //   // We reached our target server, but it returned an error
-
-      //}
-    //};  
+  
     request.send(data);
     },
     getData : function(username) {
@@ -194,9 +225,6 @@ PlatformerGame.Game.prototype = {
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
                 var myArr = JSON.parse(request.responseText);
-                console.log(myArr);
-                console.log(myArr[username]);
-                console.log(lastRecievedMove);
                 if (null != myArr[username]["lastMove"]) {
                     players = myArr;
                     
@@ -205,15 +233,36 @@ PlatformerGame.Game.prototype = {
                         player.x = myArr[username]["x"];
                         player.y = myArr[username]["y"];
                     }
-                    totalPlayers = myArr["totalPlayers"];
                 }
             }
         }
-        request.open('GET', 'http://myperfectgame.com/node/getData' + "?" + data, true);
+        request.open('GET', 'http://myperfectgame.com/node/getData' + "?" + data, false);
         request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
         request.send(data);
 
     },
+
+  getUsername : function() {
+
+    var data="";
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+      if (request.readyState == 4 && request.status == 200) {
+        var myArr = JSON.parse(request.responseText);
+        if (null != myArr["username"]) {
+          username = myArr["username"];
+          //totalPlayers = myArr["totalPlayers"];        
+          }
+        }
+      }
+      request.open('GET', 'http://myperfectgame.com/node/getUsername', false);
+      request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+      request.send(data);
+    },
+
+
+
+
     distanceBetweenTwoPoints: function(a, b) {
         var xs = b.x - a.x;
         xs = xs * xs;
