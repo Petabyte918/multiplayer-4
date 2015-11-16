@@ -1,0 +1,7 @@
+{
+    "highscores" : [
+        { "name" : "oddvar", "score" : 42 },
+        { "name" : "odd2", "score" : 4 },
+        { "name" : "johnny", "score" : 142 }
+    ]
+}
