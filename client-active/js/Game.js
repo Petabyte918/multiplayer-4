@@ -5,12 +5,12 @@ PlatformerGame.Game = function(){};
 
 PlatformerGame.Game.prototype = {
   create: function() {
-
-    this.getUsername();
-    //console.log("username:" + username);
+    console.log("dispausername2:" + displayName); 
+    this.getUsername(displayName);
+    console.log("username:" + username);
 
     var players = {};
-    //console.log("username2:" + this.game.Preload.username);
+    console.log("dispausername2:" + finalDisplayName); //this.game.Preload.username);
     
     this.platforms;
     this.cursors;
@@ -41,31 +41,18 @@ PlatformerGame.Game.prototype = {
     //player = this.playerGroup.create(32, this.game.world.height - 150, 'dude');
     //player["id"] = username;
     totalPlayers = 0;
-    player = this.spawnPlayer(username, 32, this.game.world.height - 150, 'dude')
+    player = this.spawnPlayer(username, finalDisplayName, 32, this.game.world.height - 150, 'dude')
     players["username"] = username;
     //this.spawnPlayer("player1", 32, this.game.world.height - 150, 'dude')
 
     //  Finally some stars to collect
-    this.stars = this.game.add.group();
+    this.coins = this.game.add.group();
 
     //  We will enable physics for any star that is created in this group
-    this.stars.enableBody = true;
-
-    //  Here we'll create 12 of them evenly spaced apart
-    for (var i = 0; i < 0; i++)
-    {
-        //  Create a star inside of the 'stars' group
-        var star = this.stars.create(i * 70, 0, 'star');
-
-        //  Let gravity do its thing
-        star.body.gravity.y = 300;
-
-        //  This just gives each star a slightly random bounce value
-        star.body.bounce.y = 0.7 + Math.random() * 0.2;
-    }
+    this.coins.enableBody = true;
 
     //  The score
-    this.scoreText = this.game.add.text(16, 16, this.name, { fontSize: '32px', fill: '#000' });
+    this.scoreText = this.game.add.text(16, 16, "Your score: 0", { fontSize: '32px', fill: '#FFF' });
 
     //  Our controls.
     this.cursors = this.game.input.keyboard.createCursorKeys();
@@ -74,7 +61,13 @@ PlatformerGame.Game.prototype = {
     lastRecievedMove = 4;
     tick = 1;
 
-    this.playerNames = this.game.add.group();     
+    this.playerNames = this.game.add.group(); 
+    players["coin"] = {};
+    players["coin"]["x"] = 500;
+    players["coin"]["y"] = 32;
+    coinx = 500;
+    coiny=32;
+    this.createCoin();    
   },
 
   update: function() {
@@ -82,34 +75,34 @@ PlatformerGame.Game.prototype = {
 
     this.game.physics.arcade.collide(this.playerGroup, this.blockedLayer);
     //this.game.physics.arcade.collide(player2, this.blockedLayer);
-    //this.game.physics.arcade.collide(this.stars, this.platforms);
+    this.game.physics.arcade.collide(this.coins, this.blockedLayer);
 
-    //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-    //this.game.physics.arcade.overlap(player, this.stars, this.collectStar, null, this);
+    //  Checks to see if the player overlaps with any of the coins, if he does call the collectCoin function
+    this.game.physics.arcade.overlap(player, this.coins, this.collectCoin, null, this);
 
     //  Reset the players velocity (movement)
 this.lastSentMove = -1;
     if (this.cursors.up.isDown && player.body.blocked.down) {
         if (this.lastSentMove != 2) {
-            this.sendMove(username, player.body.x, player.body.y, 2);
+            this.sendMove(username, player.body.x, player.body.y, 2, this.score);
             this.lastSentMove = 2;
         }
     }
     else if (this.cursors.left.isDown) { // don't send the same move
         if (this.lastSentMove != 1) {
-            this.sendMove(username, player.body.x, player.body.y, 1);
+            this.sendMove(username, player.body.x, player.body.y, 1, this.score);
             this.lastSentMove = 1;
         }
     }
     else if (this.cursors.right.isDown) {
         if (this.lastSentMove != 3) {
-            this.sendMove(username, player.body.x, player.body.y, 3);
+            this.sendMove(username, player.body.x, player.body.y, 3, this.score);
             this.lastSentMove = 3;
         }
     }
     else {
         if (this.lastSentMove != 0) {
-            this.sendMove(username, player.body.x, player.body.y, 0);
+            this.sendMove(username, player.body.x, player.body.y, 0, this.score);
             this.lastSentMove = 0;
         }
 
@@ -120,7 +113,7 @@ this.lastSentMove = -1;
     if (players["totalPlayers"] > totalPlayers) {
         
         for (var user in players) {
-            if (user != "totalPlayers") {
+            if (user != "totalPlayers" && user != "coin") {
                 var found = false;
                 this.playerGroup.forEach(function(player) {            
                     if (player["id"] == user) {
@@ -128,12 +121,12 @@ this.lastSentMove = -1;
                     }
                 }, this);
                 if (!found) {
-console.log("spawning " + user);
-console.log("at x:" +  players[user]["x"]);
-console.log("at y:" +  players[user]["y"]);
-                    this.spawnPlayer(user, players[user]["x"], players[user]["y"], 'dude');
+//console.log("spawning " + user);
+//console.log("at x:" +  players[user]["x"]);
+//console.log("at y:" +  players[user]["y"]);
+                    this.spawnPlayer(user, players[user]["displayName"], players[user]["x"], players[user]["y"], 'dude');
                 }
-            }            
+            }  
         }
     }
 
@@ -144,7 +137,7 @@ console.log("at y:" +  players[user]["y"]);
             //currentPlayer.reset(currentPlayer.x, currentPlayer.y);
             currentPlayer.body.x = players[currentPlayer["id"]]["x"];
             currentPlayer.body.y = players[currentPlayer["id"]]["y"];
-     //       currentPlayer.body.reset(players[currentPlayer["id"]]["x"], players[currentPlayer["id"]]["y"]);
+            //currentPlayer.body.reset(players[currentPlayer["id"]]["x"], players[currentPlayer["id"]]["y"]);
             currentPlayer.body.moves = true;
         }
 
@@ -179,26 +172,27 @@ console.log("at y:" +  players[user]["y"]);
         }
  
         if (tick % 120 == 0 ) {
-            console.log("currentPlayer is " + currentPlayer["id"]);
-            console.log("setting currentPlayer.x: " + parseInt(currentPlayer.body.x) + " to: " + parseInt(players[currentPlayer["id"]]["x"]));
-            console.log("setting currentPlayer.y: " + parseInt(currentPlayer.body.y) + " to: " + parseInt(players[currentPlayer["id"]]["y"]));
+//            console.log("currentPlayer is " + currentPlayer["id"]);
+//            console.log("setting currentPlayer.x: " + parseInt(currentPlayer.body.x) + " to: " + parseInt(players[currentPlayer["id"]]["x"]));
+ //           console.log("setting currentPlayer.y: " + parseInt(currentPlayer.body.y) + " to: " + parseInt(players[currentPlayer["id"]]["y"]));
             currentPlayer.body.moves = false;
             //currentPlayer.x = players[currentPlayer["id"]]["x"];
             //currentPlayer.y = players[currentPlayer["id"]]["y"];
-            //currentPlayer.body.reset(players[currentPlayer["id"]]["x"], players[currentPlayer["id"]]["y"]);
+       //     currentPlayer.body.reset(players[currentPlayer["id"]]["x"], players[currentPlayer["id"]]["y"]);
+            //getScores();
         }
 
         if (currentPlayer["label"]) {
-            currentPlayer["label"].x = currentPlayer.x;
+            currentPlayer["label"].x = currentPlayer.x - 10;
             currentPlayer["label"].y = currentPlayer.y;
         }
     }, this);
        
   },
 
-  spawnPlayer : function(username, x, y, sprite) {
-console.log("spAWENING: " + username + ","+ x + "," +  y);
-    newPlayer = this.game.add.sprite(32, 400, 'dude');
+  spawnPlayer : function(username, displayName, x, y, sprite) {
+//console.log("spAWENING: " + username + ","+ x + "," +  y);
+    newPlayer = this.game.add.sprite(33, 400, 'dude');
     newPlayer["id"] = username;
     this.game.physics.arcade.enable(newPlayer);
     newPlayer.body.bounce.y = 0;
@@ -208,30 +202,45 @@ console.log("spAWENING: " + username + ","+ x + "," +  y);
     newPlayer.animations.add('right', [5, 6, 7, 8], 10, true);
 //    newPlayer.anchor.setTo(0.5, 0.5);
     this.playerGroup.add(newPlayer);
-    playerName = this.game.add.text(newPlayer.x-10, newPlayer.y, username + "", { font: '14px Arial', fill: '#FFF', align: 'center' });
+    playerName = this.game.add.text(newPlayer.x - 10, newPlayer.y, displayName + "", { font: '14px Arial', fill: '#FFF', align: 'center' });
     playerName["id"] = username;
     newPlayer["label"] = playerName;
+    //newPlayer["displayName"] = displayName;
     totalPlayers++;
     return newPlayer;
   },
 
-  collectStar : function(player, star) {
+  collectCoin : function(player, coin) {
     
     // Removes the star from the screen
-    star.kill();
+    coin.kill();
 
     //  Add and update the score
-    this.score += 10;
-    this.scoreText.text = 'Score: ' + this.score;
+    this.score += 100;
+    this.scoreText.text = 'Your score: ' + this.score;
+    coinx = players["coin"]["x"];
+    coiny = players["coin"]["y"];
+    this.createCoin();
 
   },
+  createCoin : function() {
+    
+    var coin = this.coins.create(coinx, coiny, 'coin');    
 
-  sendMove : function(username, x, y, move) {
+        //  Let gravity do its thing
+        coin.body.gravity.y = 300;
 
-    var data="username="+username+"&x="+x+"&y="+y+"&move="+move;
+        //  This just gives each star a slightly random bounce value
+        coin.body.bounce.y = 0.7 + Math.random() * 0.2;
+  },
+
+
+  sendMove : function(username, x, y, move, score) {
+
+    var data="username="+username+"&x="+x+"&y="+y+"&move="+move+"&score="+score;
 
     var request = new XMLHttpRequest();
-    request.open('POST', 'http://myperfectgame.com/node/sendMove', true);
+    request.open('POST', 'http://myperfectgame.com/node/v2/sendMove', true);
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
   
     request.send(data);
@@ -257,26 +266,29 @@ console.log("spAWENING: " + username + ","+ x + "," +  y);
                 }
             }
         }
-        request.open('GET', 'http://myperfectgame.com/node/getData' + "?" + data, false);
+        request.open('GET', 'http://myperfectgame.com/node/v2/getData' + "?" + data, false);
         request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
         request.send(data);
 
     },
 
-  getUsername : function() {
+  getUsername : function(displayName) {
 
-    var data="";
+    var data="displayName="+ displayName;
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
       if (request.readyState == 4 && request.status == 200) {
         var myArr = JSON.parse(request.responseText);
         if (null != myArr["username"]) {
           username = myArr["username"];
+          finalDisplayName = myArr["displayName"];
+ //         player["label"].text = myArr["displayName"];
+          
           //totalPlayers = myArr["totalPlayers"];        
           }
         }
       }
-      request.open('GET', 'http://myperfectgame.com/node/getUsername', false);
+      request.open('GET', 'http://myperfectgame.com/node/v2/getUsername' + "?" + data, false);
       request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
       request.send(data);
     },

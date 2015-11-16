@@ -8,6 +8,7 @@
 		<script type="text/javascript" src="js/phaser.js"></script>
 		<script type="text/javascript" src="js/Boot.js"></script>
 		<script type="text/javascript" src="js/Preload.js"></script>
+                <script type="text/javascript" src="js/Player.js"></script>
 		<script type="text/javascript" src="js/Game.js"></script>
 
 		<style>
@@ -21,5 +22,103 @@
 	<body>  
 		<!-- include the main game file -->
 		<script src="js/main.js"></script>
+		<div id="mycanvas" style="width: 90%; height: 100%; float:right;"></div>
+                <div id="highscorez" style="position: absolute; width: 20%; height: 100%; float:left;">
+<center>
+<h1>Bitslap's birthday bash</h1>
+<p>Eat the cake before anyone else! WOO!</p><br />
+<i>Use keypads to move around</i><br /><br />
+Oh, and the whole point is that it's multiplayer, so EVERYBODY PLEASE JOIN! 
+<br /><br />URL is <b>myperfectgame.com/bitslap</b>
+<br /><br />
+Cake by mattb :D
+<br /><br /><br /><br />
+<p>PS: Implemented in a super naïve way, which is why it's SO SLOW. Have fun!
+</center></div>
+<script type="text/javascript">
+function ajaxCall(method, url, data, callback) {
+    var xmlhttp;
+
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+            if(xmlhttp.status == 200){
+                callback(xmlhttp.responseText);
+            }
+            else if(xmlhttp.status == 400) {
+                console.log('There was an error 400')
+            }
+            else {
+                console.log('something else other than 200 was returned')
+            }
+        }
+    }
+
+    xmlhttp.open(method, url, true);
+    xmlhttp.send(data);
+}
+function getScores() {
+	ajaxCall("GET","http://myperfectgame.com/node/v2/getScores", null, parseHighscores);
+}
+
+
+function parseHighscores(response) {
+
+    var arr = JSON.parse(response);
+    var i;
+    var out = "<center><h2>Bitslap's birthday bash</h2><br /><i>Grab the coins before anyone else! Move with keypad.</i></br /><br /><br /><b>Top 10 coin grabbers:</b><br /><br /><table cellpadding='5'>";
+
+    arr.highscores.sort(function (a, b) {
+    	if (a.score > b.score) {
+    		return -1; // -1; top score is #1
+    	}
+    	if (b.score > a.score) {
+    		return 1;
+    	}
+    	return 0;
+    });
+
+    for(i = 0; i < arr.highscores.length && i < 10; i++) {
+        out += "<tr><td>" + 
+        (arr.highscores[i].name == "null" ? "anonymous" : arr.highscores[i].name) +
+        "</td><td>" +
+        arr.highscores[i].score +
+        "</td></tr>";
+    }
+    out += "</table></center>";
+    document.getElementById("highscores").innerHTML = out;
+}
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+    }
+    return "";
+}
+function askForDisplayName(person) {
+    var promptText = "By which name do you want to be known?";
+    person = prompt(promptText, person);
+    setCookie("name", person, 365);
+    return person;
+}
+</script>
 	</body>
 </html>
